@@ -1,73 +1,60 @@
 #!/bin/bash
+set -e
 
 echo "== SimplePOSPrint Installer =="
 
-# Always run from the repo root
-cd "$(dirname "$0")"
+# Install needed OS packages
+echo "Checking for required OS packages..."
+sudo apt update
+sudo apt install -y python3 python3-pip python3-venv libjpeg-dev libopenjp2-7
 
-# System requirements
-REQUIRED_APT_PACKAGES="python3 python3-pip python3-venv libjpeg-dev libfreetype6-dev"
+# Create virtual environment if possible
+if [ ! -d "venv" ]; then
+    echo "Creating Python virtual environment..."
+    python3 -m venv venv || { echo "Could not create venv, using system Python instead."; }
+fi
 
-# Check and install system dependencies
-echo "-- Checking system dependencies (apt)..."
-if [ "$(id -u)" -ne 0 ]; then
-    echo "You may be prompted for your password to install system packages."
-    sudo apt update
-    sudo apt install -y $REQUIRED_APT_PACKAGES
+# Activate venv if it exists, otherwise install requirements system-wide
+if [ -d "venv" ]; then
+    source venv/bin/activate
+    echo "Using Python virtual environment."
+    PIP_INSTALL="pip install"
 else
-    apt update
-    apt install -y $REQUIRED_APT_PACKAGES
+    echo "Installing dependencies system-wide."
+    PIP_INSTALL="sudo pip3 install"
 fi
 
-# Create Python venv if not present
-if [ ! -d venv ]; then
-    echo "-- Creating Python virtual environment..."
-    python3 -m venv venv
-fi
+# Install Python requirements
+echo "Installing Python dependencies..."
+$PIP_INSTALL --upgrade pip
+$PIP_INSTALL -r requirements.txt
 
-# Activate venv and upgrade pip
-echo "-- Activating virtual environment and installing dependencies..."
-source venv/bin/activate
-python3 -m pip install --upgrade pip
+# Make sure service file is in place
+echo "Copying systemd service file..."
+sudo cp simpleposprint.service /etc/systemd/system/simpleposprint.service
 
-# Install Python dependencies (inside venv)
-if [ -f requirements.txt ]; then
-    pip install -r requirements.txt
-else
-    pip install flask flask_cors pillow
-fi
+# Set permissions for scripts and web files (optional, but helps non-tech staff)
+chmod +x *.sh
 
-# Prepopulate config.json if it does not exist
-if [ ! -f config.json ]; then
-    echo "-- Creating default config.json"
+# Generate a config.json if missing
+if [ ! -f "config.json" ]; then
+    echo "Generating initial config.json..."
     cat > config.json <<EOF
 {
     "printer_device": "/dev/usb/lp0",
     "text_width": 42,
     "bitmap_width": 576,
-    "prepend_logo": false
+    "prepend_logo": true
 }
 EOF
 fi
 
-echo "-- Installation complete."
-echo
-echo "To run SimplePOSPrint, activate the venv and start:"
-echo "  source venv/bin/activate"
-echo "  python3 SPP.py"
-echo
+# Enable and start service
+echo "Enabling and starting SimplePOSPrint service..."
+sudo systemctl daemon-reload
+sudo systemctl enable simpleposprint.service
+sudo systemctl restart simpleposprint.service
 
-# Offer to install as a service (if systemd service file is present)
-if [ -f simpleposprint.service ]; then
-    if [ "$(id -u)" -ne 0 ]; then
-        echo "To install as a systemd service, run:"
-        echo "  sudo cp simpleposprint.service /etc/systemd/system/"
-        echo "  sudo systemctl daemon-reload"
-        echo "  sudo systemctl enable --now simpleposprint"
-    else
-        cp simpleposprint.service /etc/systemd/system/
-        systemctl daemon-reload
-        systemctl enable --now simpleposprint
-        echo "SimplePOSPrint systemd service installed and started!"
-    fi
-fi
+echo "All done! SimplePOSPrint is now running as a service."
+echo "Access it via http://localhost:5000 in your web browser."
+echo "If you update the code, just rerun this installer."
