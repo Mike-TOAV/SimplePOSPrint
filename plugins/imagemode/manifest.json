@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "SimplePOSPrint Image Mode",
+  "version": "1.0",
+  "description": "Redirect POS receipts to thermal printer",
+  "permissions": ["activeTab"],
+"content_scripts": [
+  {
+    "matches": ["<all_urls>"],
+    "js": ["html2canvas.min.js", "inject.js"],
+    "run_at": "document_idle"
+  }
+]
+}
