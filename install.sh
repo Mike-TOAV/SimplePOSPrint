@@ -29,6 +29,14 @@ echo "Installing Python dependencies..."
 $PIP_INSTALL --upgrade pip
 $PIP_INSTALL -r requirements.txt
 
+# Create /opt/SimplePOSPrint if needed
+if [ "$PWD" != "/opt/SimplePOSPrint" ]; then
+    echo "Copying SimplePOSPrint files to /opt/SimplePOSPrint..."
+    sudo mkdir -p /opt/SimplePOSPrint
+    sudo cp -R . /opt/SimplePOSPrint
+    cd /opt/SimplePOSPrint
+fi
+
 # Make sure service file is in place
 echo "Copying systemd service file..."
 sudo cp simpleposprint.service /etc/systemd/system/simpleposprint.service
