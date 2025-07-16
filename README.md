@@ -11,3 +11,16 @@ A solution for those with a thermal receipt printer and linux, this software and
 # Licensed under the MIT License
 
 I hope this can become heavily useful for those IT Admins that are struggling with CUPS and the generic POS80 Thermal printers available today. If you have are able to improve upon this please feel free to and let me know about it: mike@taovdistro.co.uk.
+
+**Hybrid print bridge for cloud POS — send receipts directly from browser to your till’s thermal printer!**
+
+- Supports text and image receipts
+- Easily upload/change your shop logo
+- Modular and self-healing
+- Chrome extension included
+
+## Quick Start
+
+1. `python3 -m pip install flask flask-cors pillow`
+2. `python3 SPP.py`
+3. Open http://localhost:5000 in browser to configure
