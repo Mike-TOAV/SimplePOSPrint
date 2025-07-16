@@ -1,68 +1,70 @@
 #!/bin/bash
+
 set -e
 
 echo "== SimplePOSPrint Installer =="
 
-PROJECT_DIR="$(pwd)"
-SERVICE_FILE="/etc/systemd/system/simpleposprint.service"
-VENV_DIR="$PROJECT_DIR/venv"
-PYTHON="python3"
+# --- Install dependencies ---
+echo "Checking and installing dependencies..."
 
-# 1. Check for Python 3 and pip
-if ! command -v $PYTHON >/dev/null; then
-    echo "Python 3 not found. Please install python3."
-    exit 1
-fi
-if ! command -v pip3 >/dev/null; then
-    echo "pip3 not found. Please install python3-pip."
-    exit 1
-fi
+PKGS="python3 python3-pip python3-venv"
+for pkg in $PKGS; do
+    if ! dpkg -s "$pkg" >/dev/null 2>&1; then
+        echo "Installing $pkg..."
+        sudo apt update
+        sudo apt install -y $pkg
+    else
+        echo "$pkg already installed."
+    fi
+done
 
-# 2. Create virtual environment
-if [ ! -d "$VENV_DIR" ]; then
+# # Optional: Install pipx
+# if ! command -v pipx &>/dev/null; then
+#     echo "Installing pipx..."
+#     sudo apt install -y pipx
+# else
+#     echo "pipx already installed."
+# fi
+
+# --- Create Python virtual environment ---
+if [ ! -d "venv" ]; then
     echo "Creating virtual environment..."
-    $PYTHON -m venv "$VENV_DIR"
+    python3 -m venv venv
 fi
 
-# 3. Install requirements
-echo "Installing Python requirements into venv..."
-"$VENV_DIR/bin/pip" install --upgrade pip
-"$VENV_DIR/bin/pip" install -r requirements.txt
+echo "Activating virtual environment and installing requirements..."
+. venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
 
-# 4. Check/add user to lp group for USB printer access
-USER_TO_USE="${SUDO_USER:-$USER}"
-if id "$USER_TO_USE" | grep -q " lp)"; then
-    echo "User $USER_TO_USE is already in lp group."
+# --- Set up systemd service ---
+SERVICE_FILE="/etc/systemd/system/simpleposprint.service"
+if [ ! -f "$SERVICE_FILE" ]; then
+    echo "Setting up systemd service..."
+    sudo cp simpleposprint.service.example $SERVICE_FILE
+    sudo systemctl daemon-reload
+    sudo systemctl enable simpleposprint
+    sudo systemctl start simpleposprint
+    echo "SimplePOSPrint systemd service installed and started."
 else
-    echo "Adding $USER_TO_USE to lp group (may need logout/login)..."
-    sudo usermod -aG lp "$USER_TO_USE"
+    echo "Systemd service already set up."
+    sudo systemctl restart simpleposprint
 fi
 
-# 5. Generate systemd service file
-echo "Creating/updating systemd service file..."
-cat <<EOF | sudo tee $SERVICE_FILE >/dev/null
-[Unit]
-Description=SimplePOSPrint thermal printer server
-After=network.target
+# --- Printer device permissions ---
+PRINTER_DEVICE=$(jq -r '.printer_device // "/dev/usb/lp0"' config.json 2>/dev/null)
+if [ ! -e "$PRINTER_DEVICE" ]; then
+    echo "Printer device $PRINTER_DEVICE not found. Please connect the printer and restart SimplePOSPrint after plugging it in."
+else
+    if [ ! -w "$PRINTER_DEVICE" ]; then
+        echo "Adding user '$USER' to 'lp' group for printer permissions..."
+        sudo usermod -aG lp $USER
+        echo "You may need to logout and login again for permissions to take effect."
+    else
+        echo "Printer device permissions OK."
+    fi
+fi
 
-[Service]
-Type=simple
-User=$USER_TO_USE
-WorkingDirectory=$PROJECT_DIR
-ExecStart=$PROJECT_DIR/venv/bin/python $PROJECT_DIR/SPP.py
-Restart=always
-StandardOutput=journal
-StandardError=journal
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# 6. Reload, enable and start the service
-sudo systemctl daemon-reload
-sudo systemctl enable simpleposprint
-sudo systemctl restart simpleposprint
-
-echo "== SimplePOSPrint installed and started! =="
-echo "You can check status with: sudo systemctl status simpleposprint"
-echo "If you just added yourself to lp group, a logout/login may be required for permissions."
+echo "== Installation complete =="
+echo "To start the service: sudo systemctl start simpleposprint"
+echo "To check status: sudo systemctl status simpleposprint"
