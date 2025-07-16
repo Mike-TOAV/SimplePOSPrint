@@ -3,7 +3,7 @@
   "name": "SimplePOSPrint",
   "version": "1.0",
   "description": "Redirect POS receipts to thermal printer",
-  "permissions": ["scripting", "activeTab"],
+  "permissions": ["activeTab"],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
