@@ -7,7 +7,7 @@ Type=simple
 # Change this to your deployment path (default: /opt/SimplePOSPrint)
 WorkingDirectory=/opt/SimplePOSPrint
 # Prefer virtualenv if present, else fallback to system python3
-ExecStart=/bin/bash -c '[ -d venv ] && source venv/bin/activate && exec python3 SPP.py || exec python3 SPP.py'
+ExecStart=/bin/bash -c '[ -d venv ] && source venv/bin/activate && exec python3 spp.py || exec python3 spp.py'
 Restart=on-failure
 User=root
 Group=lp
