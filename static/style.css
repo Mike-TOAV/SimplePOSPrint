@@ -1,0 +1,134 @@
+body {
+  background: #f4f7fb;
+  color: #222;
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+.container {
+  max-width: 480px;
+  margin: 32px auto 0 auto;
+  padding: 2em 2em 2em 2em;
+  background: #fff;
+  border-radius: 1.1em;
+  box-shadow: 0 6px 32px #0001, 0 1.5px 6px #0001;
+}
+h1, h2 {
+  margin-top: 0;
+  font-size: 1.6em;
+  letter-spacing: 0.03em;
+  color: #3968b1;
+}
+.status-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 24px;
+  margin-bottom: 18px;
+}
+.row {
+  display: flex;
+  gap: 18px;
+  margin: 18px 0 0 0;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.actions {
+  display: flex;
+  gap: 1.4em;
+  margin-top: 2em;
+}
+.settings-link {
+  color: #3968b1;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color .2s;
+}
+.settings-link:hover {
+  color: #203c67;
+}
+input[type="number"], select, input[type="file"] {
+  border: 1px solid #c8d2e2;
+  padding: 0.4em 0.7em;
+  font-size: 1.0em;
+  border-radius: 0.5em;
+  background: #f6f8fa;
+  max-width: 160px;
+}
+input[type="file"] {
+  background: none;
+  border: none;
+  padding: 0;
+}
+input[type="checkbox"] {
+  margin-right: 8px;
+  transform: scale(1.2);
+}
+button {
+  font-family: inherit;
+  font-size: 1em;
+  padding: 0.65em 1.4em;
+  margin-right: 10px;
+  border: none;
+  border-radius: 0.6em;
+  box-shadow: 0 1px 8px #8ab5d41a;
+  font-weight: 600;
+  cursor: pointer;
+  background: #eaf2fc;
+  color: #365fa0;
+  transition: background 0.16s, color 0.16s;
+}
+button.primary {
+  background: #3968b1;
+  color: #fff;
+}
+button.primary:hover {
+  background: #22375f;
+  color: #fff;
+}
+button.secondary {
+  background: #eaf2fc;
+  color: #3968b1;
+}
+button.secondary:hover {
+  background: #c5d9f2;
+  color: #365fa0;
+}
+.status {
+  margin: 1.2em 0 0 0;
+  padding: 0.7em 1.1em;
+  border-radius: 0.5em;
+  font-size: 1.08em;
+  font-weight: 600;
+  display: inline-block;
+}
+.status.ok, .save-ok { background: #d2ffe2; color: #245533; }
+.status.err, .save-err { background: #ffe4e4; color: #9d2121; }
+.mono { font-family: monospace, Consolas, Menlo, Courier, monospace; font-size: 1.05em; }
+.logo-preview, .main-logo {
+  display: block;
+  margin: 0.6em auto 0.8em auto;
+  max-width: 240px;
+  max-height: 80px;
+  background: #fff;
+  border-radius: 1em;
+}
+#logoPreview img, .main-logo { 
+  max-width: 240px; 
+  max-height: 80px; 
+  display: block; 
+}
+@media (max-width: 600px) {
+  .container {
+    max-width: 98vw;
+    padding: 1em 0.5em;
+  }
+  .row, .actions {
+    flex-direction: column;
+    gap: 0.7em;
+    align-items: stretch;
+  }
+  .status-row {
+    grid-template-columns: 1fr;
+    gap: 7px 0;
+  }
+}
