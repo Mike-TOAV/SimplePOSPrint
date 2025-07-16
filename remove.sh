@@ -38,18 +38,5 @@ fi
 echo ""
 echo "SimplePOSPrint files and service removed."
 
-# 6. Offer to remove Python3 & dependencies (advanced/dangerous!)
-echo
-echo "!! WARNING: Removing python3/python3-venv/python3-pip can BREAK your system if other tools use them!"
-read -p "Remove Python3 and all dependencies? (NOT RECOMMENDED unless you know what you are doing) [y/N]: " REMOVE_PY
-if [[ "$REMOVE_PY" =~ ^[Yy]$ ]]; then
-    echo "Uninstalling python3, python3-venv, python3-pip..."
-    sudo apt remove --purge -y python3 python3-venv python3-pip
-    sudo apt autoremove -y
-    echo "Python3 and related packages removed."
-else
-    echo "Python left installed."
-fi
-
 echo ""
 echo "== Uninstall complete =="
