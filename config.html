@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SimplePOSPrint Configuration</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>SimplePOSPrint Configuration</h2>
+    <form id="configForm" autocomplete="off">
+      <div class="row">
+        <label for="printerSel">Printer Device:</label>
+        <select id="printerSel"></select>
+      </div>
+      <div class="row">
+        <label for="textWidth">Text Width (chars):</label>
+        <input id="textWidth" type="number" min="24" max="80" value="42">
+      </div>
+      <div class="row">
+        <label for="bitmapWidth">Image/QR Width (px):</label>
+        <input id="bitmapWidth" type="number" min="256" max="2048" value="600">
+      </div>
+      <div class="row">
+        <label for="logoInput">Logo for Receipt (PNG, ~350x90px):</label>
+        <input type="file" id="logoInput" accept="image/png">
+        <div id="logoPreview" style="margin-top:.5em"></div>
+      </div>
+      <div class="row">
+        <label>
+          <input type="checkbox" id="prependLogoChk">
+          Print logo at top of receipt
+        </label>
+      </div>
+      <div class="actions">
+        <button type="button" class="primary" id="saveBtn">Save Settings</button>
+      </div>
+      <div id="saveStatus"></div>
+    </form>
+  </div>
+  <script>
+    let config = {};
+    // Populate printers
+    fetch('/printers').then(r => r.json()).then(j => {
+      let sel = document.getElementById("printerSel");
+      j.devices.forEach(d => {
+        let o = document.createElement("option");
+        o.value = d; o.textContent = d;
+        sel.appendChild(o);
+      });
+    });
+
+    // Load config
+    fetch('/config').then(r => r.json()).then(cfg => {
+      config = cfg;
+      if(cfg.printer_device) document.getElementById("printerSel").value = cfg.printer_device;
+      if(cfg.text_width) document.getElementById("textWidth").value = cfg.text_width;
+      if(cfg.bitmap_width) document.getElementById("bitmapWidth").value = cfg.bitmap_width;
+      document.getElementById("prependLogoChk").checked = !!cfg.prepend_logo;
+    });
+
+    // Save config
+    document.getElementById("saveBtn").onclick = function() {
+      config.printer_device = document.getElementById("printerSel").value;
+      config.text_width = parseInt(document.getElementById("textWidth").value);
+      config.bitmap_width = parseInt(document.getElementById("bitmapWidth").value);
+      config.prepend_logo = document.getElementById("prependLogoChk").checked;
+      fetch('/config', {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(config)
+      }).then(r => r.json()).then(j => {
+        let s = document.getElementById("saveStatus");
+        if(j.status === "saved") {
+          s.textContent = "Saved!";
+          s.className = "save-ok";
+        } else {
+          s.textContent = "Error: " + (j.message || "?");
+          s.className = "save-err";
+        }
+        s.style.display = "block";
+        setTimeout(()=>s.style.display="none", 2000);
+      });
+    };
+
+    // Fetch & preview logo
+    function refreshLogo() {
+      fetch('/logo').then(r=>r.json()).then(j=>{
+        if(j.status==="ok") {
+          let img = new Image();
+          img.src = j.data;
+          img.style.maxWidth = "250px";
+          img.style.maxHeight = "90px";
+          document.getElementById("logoPreview").innerHTML = "";
+          document.getElementById("logoPreview").appendChild(img);
+        } else {
+          document.getElementById("logoPreview").innerHTML = "<em>No logo uploaded</em>";
+        }
+      });
+    }
+    refreshLogo();
+
+    // Upload logo
+    document.getElementById("logoInput").addEventListener("change", function() {
+      let file = this.files[0];
+      if (!file) return;
+      let formData = new FormData();
+      formData.append("file", file);
+      fetch("/logo", { method: "POST", body: formData })
+        .then(r=>r.json())
+        .then(j=>{
+          if(j.status === "success") refreshLogo();
+          else alert("Logo upload failed: " + (j.message||"?"));
+        });
+    });
+
+  </script>
+</body>
+</html>
