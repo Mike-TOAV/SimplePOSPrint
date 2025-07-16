@@ -1,0 +1,6 @@
+{
+  "printer_device": "/dev/usb/lp0",
+  "text_width": 42,
+  "bitmap_width": 576,
+  "prepend_logo": true
+}
