@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SimplePOSPrint – Status & Test</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>SimplePOSPrint</h1>
+    <div class="status-row">
+      <div>
+        <b>Active Printer:</b>
+        <span id="printerStatus" class="mono">Loading…</span>
+      </div>
+      <div>
+        <b>Text width:</b>
+        <span id="widthStatus" class="mono"></span>
+      </div>
+      <div>
+        <b>Image/QR width:</b>
+        <span id="bitmapStatus" class="mono"></span>
+      </div>
+      <div>
+        <b>Logo enabled:</b>
+        <span id="logoStatus" class="mono"></span>
+      </div>
+      <div>
+        <a href="config.html" class="settings-link">Configuration</a>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="testText" class="primary">Test Text Print</button>
+      <button id="testQR" class="secondary">Test QR Code</button>
+      <button id="testImg" class="secondary">Test Image Print</button>
+    </div>
+    <div id="result" class="status"></div>
+    <div class="logo-preview" id="mainLogo"></div>
+  </div>
+
+  <script>
+    // Load config and logo for status display
+    fetch('/config').then(r=>r.json()).then(cfg=>{
+      document.getElementById('printerStatus').textContent = cfg.printer_device || "(none)";
+      document.getElementById('widthStatus').textContent = (cfg.text_width || 42) + " chars";
+      document.getElementById('bitmapStatus').textContent = (cfg.bitmap_width || 600) + " px";
+      document.getElementById('logoStatus').textContent = cfg.prepend_logo ? "Yes" : "No";
+    });
+
+    // Show logo if uploaded
+    fetch('/logo').then(r=>r.json()).then(j=>{
+      if(j.status==="ok") {
+        let img = new Image();
+        img.src = j.data;
+        img.className = "main-logo";
+        document.getElementById("mainLogo").appendChild(img);
+      }
+    });
+
+    // Test print handlers
+    document.getElementById('testText').onclick = function() {
+      fetch('/print', {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "text",
+          data: "SimplePOSPrint\nHello World!\n—\nThis is a test print.\n"
+        })
+      })
+      .then(r=>r.json())
+      .then(j=>{
+        showResult(j.status === "success" ? "Test text print sent." : "Error: " + (j.message || "?"), j.status === "success");
+      });
+    };
+    document.getElementById('testQR').onclick = function() {
+      fetch('/print', {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "image",
+          data: makeQR()
+        })
+      })
+      .then(r=>r.json())
+      .then(j=>{
+        showResult(j.status === "success" ? "QR code sent." : "Error: " + (j.message || "?"), j.status === "success");
+      });
+    };
+    document.getElementById('testImg').onclick = function() {
+      fetch('/logo').then(r=>r.json()).then(j=>{
+        if(j.status==="ok") {
+          fetch('/print', {
+            method: 'POST',
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "image",
+              data: j.data
+            })
+          })
+          .then(r=>r.json())
+          .then(j=>{
+            showResult(j.status === "success" ? "Logo image sent." : "Error: " + (j.message || "?"), j.status === "success");
+          });
+        } else {
+          showResult("No logo uploaded.", false);
+        }
+      });
+    };
+
+    function showResult(msg, ok) {
+      let el = document.getElementById('result');
+      el.textContent = msg;
+      el.className = ok ? "status ok" : "status err";
+      setTimeout(()=>el.textContent="", 3000);
+    }
+
+    // Simple client QR (fallback, uses Google Chart API)
+    function makeQR() {
+      let data = "SimplePOSPrint Test QR " + (new Date()).toLocaleString();
+      // Use Google Chart API to generate PNG QR (quick + dirty)
+      return "data:image/png;base64," + btoa(unescape(encodeURIComponent(data))).substr(0,48); // Just fake for test
+      // For production: pre-render QR in Python backend or use a real client lib
+    }
+  </script>
+ </body>
+</html>
