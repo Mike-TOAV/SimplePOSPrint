@@ -5,12 +5,12 @@ After=network.target
 [Service]
 Type=simple
 # Change this to your deployment path (default: /opt/SimplePOSPrint)
-WorkingDirectory=/opt/SimplePOSPrint
+WorkingDirectory=/opt/spp
 # Prefer virtualenv if present, else fallback to system python3
-ExecStart=/bin/bash -c '[ -d venv ] && source venv/bin/activate && exec python3 spp.py || exec python3 spp.py'
+ExecStart=/opt/spp/venv/bin/python3 /opt/spp/spp.py
 Restart=on-failure
-User=root
-Group=lp
+User=spp
+Group=spp
 Environment=PYTHONUNBUFFERED=1
 
 [Install]
